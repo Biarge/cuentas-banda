@@ -1,47 +1,258 @@
-<!doctype html><html lang="es"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#17324d"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17324d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Cuentas Banda</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f3f5f7;color:#18212b}
-header{background:#17324d;color:#fff;padding:20px 18px}.wrap{max-width:700px;margin:auto;padding:15px}
-h1{margin:0 0 4px;font-size:24px}.sub{opacity:.8;font-size:13px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
-.card{background:#fff;padding:15px;border-radius:15px;box-shadow:0 2px 8px #0001}.wide{grid-column:1/-1}.label{font-size:12px;color:#687580}.num{font-size:21px;font-weight:800;margin-top:4px}
-.green{color:#14834b}.red{color:#c73535}button{border:0;border-radius:11px;padding:12px 15px;background:#17324d;color:white;font-weight:700;font-size:15px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.list{background:#fff;border-radius:14px;overflow:hidden}.item{padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:10px}
-dialog{border:0;border-radius:18px;width:min(94%,480px);padding:0}dialog::backdrop{background:#0008}.modal{padding:20px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
-input,select{width:100%;padding:12px;border:1px solid #d5dbe0;border-radius:10px;font-size:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.muted{color:#687580;font-size:12px}
-</style></head><body>
-<header><div class="wrap"><h1>🎺 Cuentas Banda</h1><div class="sub">Banco · Caja · Ingresos · Gastos · Traspasos</div></div></header>
-<main class="wrap">
-<div class="cards"><div class="card"><div class="label">🏦 Banco</div><div class="num" id="bank">0,00 €</div></div>
-<div class="card"><div class="label">💵 Caja</div><div class="num" id="cash">0,00 €</div></div>
-<div class="card wide"><div class="label">💰 Saldo total</div><div class="num" id="total">0,00 €</div></div>
-<div class="card"><div class="label">Ingresos 2026</div><div class="num green" id="income">0,00 €</div></div>
-<div class="card"><div class="label">Gastos 2026</div><div class="num red" id="expense">0,00 €</div></div></div>
-<div class="actions"><button onclick="openForm()">+ Añadir movimiento</button><button onclick="backup()">Copia de seguridad</button><button onclick="restore()">Importar copia</button></div>
-<h2>Movimientos</h2><div id="list" class="list"></div><p class="muted">Los datos se guardan en este dispositivo. La app funciona sin conexión después de la primera carga.</p>
-<input id="file" type="file" accept=".json" hidden onchange="loadBackup(event)">
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f3f5f7;color:#18212b}
+header{background:#17324d;color:white;padding:20px 18px 18px;position:sticky;top:0;z-index:5}
+h1{font-size:23px;margin:0 0 14px}.sub{opacity:.8;font-size:13px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.card{background:white;border-radius:15px;padding:15px;box-shadow:0 2px 8px #00000010}.card b{font-size:20px}.label{font-size:12px;color:#66717d;margin-bottom:5px}
+.total{grid-column:1/-1}.positive{color:#14834b}.negative{color:#c73535}
+main{padding:15px;max-width:850px;margin:auto}.section-title{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px}
+button{border:0;border-radius:12px;padding:12px 15px;font-weight:700;background:#17324d;color:white;cursor:pointer}
+button.secondary{background:#e8edf2;color:#17324d}.fab{position:fixed;right:18px;bottom:18px;border-radius:50%;width:58px;height:58px;font-size:25px;box-shadow:0 5px 18px #0003;z-index:10}
+table{width:100%;border-collapse:collapse;background:white;border-radius:14px;overflow:hidden}.tablewrap{overflow:auto;border-radius:14px}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid #edf0f2;font-size:13px}th{font-size:12px;color:#66717d;background:#fafbfc}
+.badge{padding:5px 8px;border-radius:9px;font-size:11px;font-weight:700}.ing{background:#e3f6eb;color:#08733d}.gas{background:#fde8e8;color:#a82727}.tra{background:#e9eef6;color:#36516c}
+.empty{text-align:center;padding:28px;color:#74808c;background:white;border-radius:14px}
+dialog{border:0;border-radius:18px;width:min(94%,500px);padding:0;box-shadow:0 20px 60px #0005}dialog::backdrop{background:#0007}.modal{padding:20px}.modal h2{margin-top:0}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}input,select{width:100%;padding:12px;border:1px solid #d7dde3;border-radius:10px;font-size:16px;background:white}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.small{font-size:12px;color:#687580}.section-title h2{margin:0}
+@media(max-width:600px){.desktop{display:none}th:nth-child(4),td:nth-child(4){display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎺 Cuentas Banda</h1>
+  <div class="sub">Control de banco, caja, ingresos y gastos · Sin IVA</div>
+</header>
+<main>
+  <div class="cards">
+    <div class="card"><div class="label">🏦 Banco</div><b id="bank">0,00 €</b></div>
+    <div class="card"><div class="label">💵 Caja</div><b id="cash">0,00 €</b></div>
+    <div class="card total"><div class="label">💰 Saldo total</div><b id="total">0,00 €</b></div>
+    <div class="card"><div class="label">Ingresos 2026</div><b class="positive" id="income">0,00 €</b></div>
+    <div class="card"><div class="label">Gastos 2026</div><b class="negative" id="expense">0,00 €</b></div>
+  </div>
+
+  <div class="section-title"><h2>Movimientos</h2><button onclick="openForm()">+ Movimiento</button></div>
+  <div class="filters">
+    <select id="year" onchange="render()"><option value="all">Todos los años</option></select>
+    <select id="type" onchange="render()"><option value="all">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option><option value="transfer">Traspasos</option></select>
+  </div>
+  <br>
+  <div id="list"></div>
+  <p class="small">Los datos se guardan en este dispositivo. Usa “Exportar” para tener una copia.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:30px">
+    <button class="secondary" onclick="exportData()">Exportar copia</button>
+    <button class="secondary" onclick="document.getElementById('importFile').click()">Importar copia</button>
+    <input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="secondary" onclick="clearAll()">Borrar todos</button>
+  </div>
 </main>
-<dialog id="dlg"><div class="modal"><h2>Nuevo movimiento</h2><form onsubmit="save(event)">
-<label>Fecha</label><input id="date" type="date" required>
-<label>Tipo</label><select id="kind" onchange="toggle()"><option value="income">Ingreso</option><option value="expense">Gasto</option><option value="transfer">Traspaso</option></select>
-<label>Concepto</label><input id="concept" required placeholder="Ej. Subvención Ayuntamiento">
-<div class="row"><div><label>Importe (€)</label><input id="amount" type="number" min=".01" step=".01" required></div>
-<div id="abox"><label>Cuenta</label><select id="account"><option value="bank">Banco</option><option value="cash">Caja</option></select></div></div>
-<div id="tbox" class="row" style="display:none"><div><label>Origen</label><select id="from"><option value="bank">Banco</option><option value="cash">Caja</option></select></div><div><label>Destino</label><select id="to"><option value="cash">Caja</option><option value="bank">Banco</option></select></div></div>
-<label>Categoría</label><select id="category"><option>Subvención Ayuntamiento</option><option>Cuotas</option><option>Actuaciones</option><option>Instrumentos</option><option>Reparaciones</option><option>Material musical</option><option>Seguros</option><option>Gestoría</option><option>Comidas</option><option>Transporte</option><option>Otros</option></select>
-<label>Observaciones</label><input id="notes">
-<div class="actions"><button type="button" onclick="dlg.close()">Cancelar</button><button>Guardar</button></div></form></div></dialog>
+<button class="fab" onclick="openForm()">+</button>
+
+<dialog id="dlg">
+<div class="modal">
+<h2>Nuevo movimiento</h2>
+<form id="form" onsubmit="save(event)">
+  <label>Fecha</label><input id="date" type="date" required>
+  <label>Tipo</label>
+  <select id="kind" onchange="toggleTransfer()">
+    <option value="income">Ingreso</option><option value="expense">Gasto</option><option value="transfer">Traspaso banco ↔ caja</option>
+  </select>
+  <label>Concepto</label><input id="concept" placeholder="Ej. Subvención Ayuntamiento" required>
+  <div class="row">
+    <div><label>Importe (€)</label><input id="amount" type="number" step="0.01" min="0.01" required></div>
+    <div id="accountBox"><label>Cuenta</label><select id="account"><option value="bank">Banco</option><option value="cash">Caja</option></select></div>
+  </div>
+  <div id="transferBox" style="display:none" class="row">
+    <div><label>Origen</label><select id="from"><option value="bank">Banco</option><option value="cash">Caja</option></select></div>
+    <div><label>Destino</label><select id="to"><option value="cash">Caja</option><option value="bank">Banco</option></select></div>
+  </div>
+  <label id="catLabel">Categoría</label>
+  <select id="category">
+    <option>Subvención Ayuntamiento</option><option>Cuotas</option><option>Actuaciones</option><option>Instrumentos</option>
+    <option>Reparaciones</option><option>Material musical</option><option>Seguros</option><option>Gestoría</option>
+    <option>Comidas</option><option>Transporte</option><option>Otros</option>
+  </select>
+  <label>Observaciones</label><input id="notes" placeholder="Opcional">
+<label>📎 Factura / justificante</label>
+<input id="attachment" type="file" accept="image/*,.pdf,.jpg,.jpeg,.png">
+<div id="attachmentInfo" class="small"></div>
+  <div class="actions"><button type="button" class="secondary" onclick="dlg.close()">Cancelar</button><button>Guardar</button></div>
+</form>
+</div></dialog>
+
 <script>
-if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-const K='cb-v1';let d=JSON.parse(localStorage.getItem(K)||'[]');const euro=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
-function calc(){let b=0,c=0,i=0,e=0;d.forEach(x=>{if(x.kind==='income'){x.account==='bank'?b+=x.amount:c+=x.amount;i+=x.amount}if(x.kind==='expense'){x.account==='bank'?b-=x.amount:c-=x.amount;e+=x.amount}if(x.kind==='transfer'){x.from==='bank'?(b-=x.amount,c+=x.amount):(c-=x.amount,b+=x.amount)}});return[b,c,i,e]}
-function render(){let [b,c,i,e]=calc();bank.textContent=euro(b);cash.textContent=euro(c);total.textContent=euro(b+c);income.textContent=euro(i);expense.textContent=euro(e);list.innerHTML=d.length?[...d].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item"><div><b>${x.concept}</b><br><span class="muted">${x.date} · ${x.kind==='transfer'?(x.from==='bank'?'Banco → Caja':'Caja → Banco'):(x.account==='bank'?'Banco':'Caja')}</span></div><b class="${x.kind==='expense'?'red':'green'}">${x.kind==='expense'?'−':x.kind==='income'?'+':'↔'} ${euro(x.amount)}</b></div>`).join(''):'<div class="item">Todavía no hay movimientos.</div>'}
-function openForm(){date.value=new Date().toISOString().slice(0,10);document.querySelector('form').reset();date.value=new Date().toISOString().slice(0,10);kind.value='income';toggle();dlg.showModal()}
-function toggle(){let t=kind.value==='transfer';abox.style.display=t?'none':'block';tbox.style.display=t?'grid':'none';category.style.display=t?'none':'block'}
-function save(e){e.preventDefault();d.push({date:date.value,kind:kind.value,concept:concept.value,amount:+amount.value,account:account.value,from:from.value,to:to.value,category:category.value,notes:notes.value});localStorage.setItem(K,JSON.stringify(d));dlg.close();render()}
-function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='cuentas-banda-copia.json';a.click()}
-function restore(){file.click()}function loadBackup(e){let r=new FileReader();r.onload=()=>{try{d=JSON.parse(r.result);localStorage.setItem(K,JSON.stringify(d));render()}catch{alert('Copia no válida')}};r.readAsText(e.target.files[0])}
+if ("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+const KEY='banda_cuentas_v1';
+let data=JSON.parse(localStorage.getItem(KEY)||'[]');
+const euro=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
+const fmtDate=s=>new Date(s+'T00:00:00').toLocaleDateString('es-ES');
+function persist(){localStorage.setItem(KEY,JSON.stringify(data));}
+function openForm(){form.reset();date.value=new Date().toISOString().slice(0,10);kind.value='income';toggleTransfer();refreshCategorySelect();dlg.showModal()}
+function toggleTransfer(){
+ const t=kind.value==='transfer'; transferBox.style.display=t?'grid':'none'; accountBox.style.display=t?'none':'block'; catLabel.style.display=t?'none':'block'; category.style.display=t?'none':'block';
+}
+function save(e){
+ e.preventDefault();
+ const k=kind.value, a=+amount.value;
+ data.push({id:crypto.randomUUID(),date:date.value,kind:k,concept:concept.value.trim(),amount:a,
+ account:k==='transfer'?null:account.value,from:k==='transfer'?from.value:null,to:k==='transfer'?to.value:null,
+ category:k==='transfer'?'Traspaso':category.value,notes:notes.value.trim()});
+ persist();dlg.close();render();
+}
+function balances(items){
+ let bank=0,cash=0,income=0,expense=0;
+ items.forEach(x=>{
+   if(x.kind==='income'){if(x.account==='bank')bank+=x.amount;else cash+=x.amount;income+=x.amount}
+   if(x.kind==='expense'){if(x.account==='bank')bank-=x.amount;else cash-=x.amount;expense+=x.amount}
+   if(x.kind==='transfer'){if(x.from==='bank'){bank-=x.amount;cash+=x.amount}else{cash-=x.amount;bank+=x.amount}}
+ });
+ return {bank,cash,income,expense};
+}
+
+const DEFAULT_CATEGORIES=[
+{id:'c1',name:'Subvenciones',icon:'🏛️',kind:'income'},
+{id:'c2',name:'Donaciones',icon:'❤️',kind:'income'},
+{id:'c3',name:'Lotería',icon:'🎄',kind:'income'},
+{id:'c4',name:'Otros ingresos',icon:'💰',kind:'income'},
+{id:'c5',name:'Actuaciones',icon:'🎵',kind:'income'},
+{id:'c6',name:'Otros gastos',icon:'📦',kind:'expense'},
+{id:'c7',name:'Músicos',icon:'🎵',kind:'expense'},
+{id:'c8',name:'Director',icon:'👨‍🏫',kind:'expense'},
+{id:'c9',name:'Comidas - Cenas',icon:'🍽️',kind:'expense'},
+{id:'c10',name:'Ocio',icon:'💃',kind:'expense'},
+{id:'c11',name:'Instrumentos',icon:'🎺',kind:'expense'},
+{id:'c12',name:'Reparaciones',icon:'🛠️',kind:'expense'},
+{id:'c13',name:'Gastos bancarios',icon:'🏦',kind:'expense'},
+{id:'c14',name:'Uniformes',icon:'👔',kind:'expense'},
+{id:'c15',name:'Partituras',icon:'🎼',kind:'expense'},
+{id:'c16',name:'Formación',icon:'🙏',kind:'expense'},
+{id:'c17',name:'Transporte',icon:'🚌',kind:'expense'},
+{id:'c18',name:'Seguros',icon:'🛡️',kind:'expense'}
+];
+const CATKEY='cuentas_banda_categories_v1';
+let categories=JSON.parse(localStorage.getItem(CATKEY)||'null')||DEFAULT_CATEGORIES;
+let editingCatId=null;
+function saveCats(){localStorage.setItem(CATKEY,JSON.stringify(categories))}
+function openCategory(id=null){
+ editingCatId=id;
+ if(id){let c=categories.find(x=>x.id===id);catTitle.textContent='Editar categoría';catName.value=c.name;catIcon.value=c.icon;catKind.value=c.kind}
+ else{catTitle.textContent='Nueva categoría';catName.value='';catIcon.value='';catKind.value='expense'}
+ catDlg.showModal();
+}
+function saveCategory(e){
+ e.preventDefault();
+ let x={id:editingCatId||crypto.randomUUID(),name:catName.value.trim(),icon:catIcon.value.trim()||'📁',kind:catKind.value};
+ if(!x.name)return;
+ let i=categories.findIndex(c=>c.id===x.id);
+ if(i>=0)categories[i]=x;else categories.push(x);
+ saveCats();catDlg.close();refreshCategorySelect();renderCategories();render();
+}
+function deleteCategory(id){
+ if(data.some(x=>x.categoryId===id)){alert('No se puede eliminar: hay movimientos que usan esta categoría. Puedes editarla o cambiar esos movimientos primero.');return}
+ if(confirm('¿Eliminar esta categoría?')){categories=categories.filter(x=>x.id!==id);saveCats();refreshCategorySelect();renderCategories()}
+}
+function refreshCategorySelect(){
+ let k=kind.value;
+ category.innerHTML=categories.filter(c=>c.kind===k).map(c=>`<option value="${c.id}">${c.icon} ${esc(c.name)}</option>`).join('');
+ if(!category.value && categories.filter(c=>c.kind===k).length===0) category.innerHTML='<option value="">Sin categorías</option>';
+}
+function renderCategories(){
+ let inc=categories.filter(c=>c.kind==='income'), exp=categories.filter(c=>c.kind==='expense');
+ const group=(title,arr)=>`<div class="card" style="margin-bottom:10px"><div class="label">${title}</div>${arr.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf0f2"><span style="font-weight:700">${c.icon} ${esc(c.name)}</span><span class="actions"><button class="iconbtn secondary" onclick="openCategory('${c.id}')">Editar</button><button class="iconbtn secondary" onclick="deleteCategory('${c.id}')">Borrar</button></span></div>`).join('')}</div>`;
+ categoriesEl=group('Ingresos',inc)+group('Gastos',exp);
+ document.getElementById('categories').innerHTML=categoriesEl;
+}
+kind.addEventListener('change',refreshCategorySelect);
+
+
+let editingAttachment=null;
+function readAttachment(file){
+ return new Promise((resolve,reject)=>{
+   if(!file){resolve(null);return}
+   if(file.size>5*1024*1024){alert('El archivo supera 5 MB. Elige una factura o foto más pequeña.');resolve(null);return}
+   const r=new FileReader();r.onload=()=>resolve({name:file.name,type:file.type,size:file.size,data:r.result});r.onerror=reject;r.readAsDataURL(file);
+ });
+}
+function showAttachment(x){
+ if(!x?.attachment?.data)return;
+ const w=window.open();
+ if(!w){alert('El navegador ha bloqueado la ventana.');return}
+ if((x.attachment.type||'').startsWith('image/')) w.document.write(`<title>${esc(x.attachment.name)}</title><img src="${x.attachment.data}" style="max-width:100%">`);
+ else w.document.write(`<title>${esc(x.attachment.name)}</title><iframe src="${x.attachment.data}" style="width:100%;height:100vh;border:0"></iframe>`);
+}
+function downloadAttachment(x){
+ if(!x?.attachment?.data)return;
+ const a=document.createElement('a');a.href=x.attachment.data;a.download=x.attachment.name||'justificante';a.click();
+}
+function populateReportYears(){
+ const ys=[...new Set(data.map(x=>x.date.slice(0,4)))].sort().reverse();
+ const cur=new Date().getFullYear().toString(); if(!ys.includes(cur))ys.unshift(cur);
+ reportYear.innerHTML=ys.map(y=>`<option>${y}</option>`).join('');
+}
+function openReport(){
+ populateReportYears();reportYear.value=new Date().getFullYear();buildReport();reportDlg.showModal();
+}
+reportYear.addEventListener('change',buildReport);
+function buildReport(){
+ const y=reportYear.value, rows=data.filter(x=>x.date.startsWith(y)), b=balances(rows);
+ const cats={};rows.forEach(x=>{if(x.kind!=='transfer')cats[x.category]=(cats[x.category]||0)+(x.kind==='expense'?-x.amount:x.amount)});
+ const top=Object.entries(cats).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+ reportContent.innerHTML=`<h3>Resumen ${y}</h3>
+ <p><b>Ingresos:</b> <span class="green">${euro(b.income)}</span><br>
+ <b>Gastos:</b> <span class="red">${euro(b.expense)}</span><br>
+ <b>Resultado:</b> ${euro(b.income-b.expense)}</p>
+ <p><b>Movimientos:</b> ${rows.length}</p>
+ <h3>Por categoría</h3>
+ ${top.length?'<ul>'+top.map(([c,v])=>`<li>${esc(c)}: ${euro(v)}</li>`).join('')+'</ul>':'<p>Sin movimientos.</p>'}`;
+}
+function printReport(){
+ const y=reportYear.value, rows=data.filter(x=>x.date.startsWith(y)), b=balances(rows);
+ const w=window.open('','_blank'); if(!w)return;
+ w.document.write(`<html><head><title>Informe Cuentas Banda ${y}</title><style>body{font-family:Arial;padding:30px}table{border-collapse:collapse;width:100%}td,th{padding:7px;border-bottom:1px solid #ddd;text-align:left}</style></head><body>
+ <h1>Cuentas Banda — Informe ${y}</h1><p>Ingresos: ${euro(b.income)}<br>Gastos: ${euro(b.expense)}<br><b>Resultado: ${euro(b.income-b.expense)}</b></p>
+ <table><tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Importe</th><th>Cuenta</th><th>Categoría</th></tr>
+ ${rows.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`<tr><td>${x.date}</td><td>${esc(x.concept)}</td><td>${x.kind==='income'?'Ingreso':x.kind==='expense'?'Gasto':'Traspaso'}</td><td>${euro(x.amount)}</td><td>${x.kind==='transfer'?(x.from==='bank'?'Banco → Caja':'Caja → Banco'):(x.account==='bank'?'Banco':'Caja')}</td><td>${esc(x.category)}</td></tr>`).join('')}</table></body></html>`);
+ w.document.close();w.print();
+}
+
+function render(){
+ const years=[...new Set(data.map(x=>x.date.slice(0,4)))].sort().reverse();
+ year.innerHTML='<option value="all">Todos los años</option>'+years.map(y=>`<option>${y}</option>`).join('');
+ if(![...year.options].some(o=>o.value===year.value)) year.value='all';
+ const y=year.value,t=type.value;
+ const filtered=data.filter(x=>(y==='all'||x.date.startsWith(y))&&(t==='all'||x.kind===t));
+ const b=balances(data);
+ bank.textContent=euro(b.bank);cash.textContent=euro(b.cash);total.textContent=euro(b.bank+b.cash);
+ const currentYear=new Date().getFullYear().toString(),yb=balances(data.filter(x=>x.date.startsWith(currentYear)));
+ income.textContent=euro(yb.income);expense.textContent=euro(yb.expense);
+ const sorted=[...filtered].sort((a,b)=>b.date.localeCompare(a.date));
+ if(!sorted.length){list.innerHTML='<div class="empty">Todavía no hay movimientos.<br>Añade el primero con “+ Movimiento”.</div>';return}
+ list.innerHTML='<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Importe</th><th>Cuenta</th><th>Categoría</th></tr></thead><tbody>'+
+ sorted.map(x=>{
+  const sign=x.kind==='expense'?'−':x.kind==='income'?'+':'↔';
+  const cls=x.kind==='expense'?'gas':x.kind==='income'?'ing':'tra';
+  const acc=x.kind==='transfer'?(x.from==='bank'?'Banco → Caja':'Caja → Banco'):(x.account==='bank'?'Banco':'Caja');
+  return `<tr><td>${fmtDate(x.date)}</td><td><b>${esc(x.concept)}</b>${x.attachment?' 📎':''}${x.notes?`<br><span class="small">${esc(x.notes)}</span>`:''}</td><td><span class="badge ${cls}">${sign} ${euro(x.amount)}</span></td><td>${acc}</td><td>${esc(x.category)}</td></tr>`;
+ }).join('')+'</tbody></table></div>';
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function exportData(){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='cuentas-banda-copia.json';a.click();URL.revokeObjectURL(a.href);
+}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw 0;data=d;persist();render();alert('Copia importada correctamente.')}catch{alert('El archivo no es válido.')}};r.readAsText(f)}
+function clearAll(){if(confirm('¿Seguro que quieres borrar TODOS los movimientos? Esta acción no se puede deshacer.')){data=[];persist();render()}}
 render();
-</script></body></html>
+</script>
+</body>
+</html>
