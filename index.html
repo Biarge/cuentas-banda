@@ -1,0 +1,47 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17324d"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<title>Cuentas Banda</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f3f5f7;color:#18212b}
+header{background:#17324d;color:#fff;padding:20px 18px}.wrap{max-width:700px;margin:auto;padding:15px}
+h1{margin:0 0 4px;font-size:24px}.sub{opacity:.8;font-size:13px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.card{background:#fff;padding:15px;border-radius:15px;box-shadow:0 2px 8px #0001}.wide{grid-column:1/-1}.label{font-size:12px;color:#687580}.num{font-size:21px;font-weight:800;margin-top:4px}
+.green{color:#14834b}.red{color:#c73535}button{border:0;border-radius:11px;padding:12px 15px;background:#17324d;color:white;font-weight:700;font-size:15px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.list{background:#fff;border-radius:14px;overflow:hidden}.item{padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:10px}
+dialog{border:0;border-radius:18px;width:min(94%,480px);padding:0}dialog::backdrop{background:#0008}.modal{padding:20px}label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
+input,select{width:100%;padding:12px;border:1px solid #d5dbe0;border-radius:10px;font-size:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.muted{color:#687580;font-size:12px}
+</style></head><body>
+<header><div class="wrap"><h1>🎺 Cuentas Banda</h1><div class="sub">Banco · Caja · Ingresos · Gastos · Traspasos</div></div></header>
+<main class="wrap">
+<div class="cards"><div class="card"><div class="label">🏦 Banco</div><div class="num" id="bank">0,00 €</div></div>
+<div class="card"><div class="label">💵 Caja</div><div class="num" id="cash">0,00 €</div></div>
+<div class="card wide"><div class="label">💰 Saldo total</div><div class="num" id="total">0,00 €</div></div>
+<div class="card"><div class="label">Ingresos 2026</div><div class="num green" id="income">0,00 €</div></div>
+<div class="card"><div class="label">Gastos 2026</div><div class="num red" id="expense">0,00 €</div></div></div>
+<div class="actions"><button onclick="openForm()">+ Añadir movimiento</button><button onclick="backup()">Copia de seguridad</button><button onclick="restore()">Importar copia</button></div>
+<h2>Movimientos</h2><div id="list" class="list"></div><p class="muted">Los datos se guardan en este dispositivo. La app funciona sin conexión después de la primera carga.</p>
+<input id="file" type="file" accept=".json" hidden onchange="loadBackup(event)">
+</main>
+<dialog id="dlg"><div class="modal"><h2>Nuevo movimiento</h2><form onsubmit="save(event)">
+<label>Fecha</label><input id="date" type="date" required>
+<label>Tipo</label><select id="kind" onchange="toggle()"><option value="income">Ingreso</option><option value="expense">Gasto</option><option value="transfer">Traspaso</option></select>
+<label>Concepto</label><input id="concept" required placeholder="Ej. Subvención Ayuntamiento">
+<div class="row"><div><label>Importe (€)</label><input id="amount" type="number" min=".01" step=".01" required></div>
+<div id="abox"><label>Cuenta</label><select id="account"><option value="bank">Banco</option><option value="cash">Caja</option></select></div></div>
+<div id="tbox" class="row" style="display:none"><div><label>Origen</label><select id="from"><option value="bank">Banco</option><option value="cash">Caja</option></select></div><div><label>Destino</label><select id="to"><option value="cash">Caja</option><option value="bank">Banco</option></select></div></div>
+<label>Categoría</label><select id="category"><option>Subvención Ayuntamiento</option><option>Cuotas</option><option>Actuaciones</option><option>Instrumentos</option><option>Reparaciones</option><option>Material musical</option><option>Seguros</option><option>Gestoría</option><option>Comidas</option><option>Transporte</option><option>Otros</option></select>
+<label>Observaciones</label><input id="notes">
+<div class="actions"><button type="button" onclick="dlg.close()">Cancelar</button><button>Guardar</button></div></form></div></dialog>
+<script>
+if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+const K='cb-v1';let d=JSON.parse(localStorage.getItem(K)||'[]');const euro=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
+function calc(){let b=0,c=0,i=0,e=0;d.forEach(x=>{if(x.kind==='income'){x.account==='bank'?b+=x.amount:c+=x.amount;i+=x.amount}if(x.kind==='expense'){x.account==='bank'?b-=x.amount:c-=x.amount;e+=x.amount}if(x.kind==='transfer'){x.from==='bank'?(b-=x.amount,c+=x.amount):(c-=x.amount,b+=x.amount)}});return[b,c,i,e]}
+function render(){let [b,c,i,e]=calc();bank.textContent=euro(b);cash.textContent=euro(c);total.textContent=euro(b+c);income.textContent=euro(i);expense.textContent=euro(e);list.innerHTML=d.length?[...d].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item"><div><b>${x.concept}</b><br><span class="muted">${x.date} · ${x.kind==='transfer'?(x.from==='bank'?'Banco → Caja':'Caja → Banco'):(x.account==='bank'?'Banco':'Caja')}</span></div><b class="${x.kind==='expense'?'red':'green'}">${x.kind==='expense'?'−':x.kind==='income'?'+':'↔'} ${euro(x.amount)}</b></div>`).join(''):'<div class="item">Todavía no hay movimientos.</div>'}
+function openForm(){date.value=new Date().toISOString().slice(0,10);document.querySelector('form').reset();date.value=new Date().toISOString().slice(0,10);kind.value='income';toggle();dlg.showModal()}
+function toggle(){let t=kind.value==='transfer';abox.style.display=t?'none':'block';tbox.style.display=t?'grid':'none';category.style.display=t?'none':'block'}
+function save(e){e.preventDefault();d.push({date:date.value,kind:kind.value,concept:concept.value,amount:+amount.value,account:account.value,from:from.value,to:to.value,category:category.value,notes:notes.value});localStorage.setItem(K,JSON.stringify(d));dlg.close();render()}
+function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='cuentas-banda-copia.json';a.click()}
+function restore(){file.click()}function loadBackup(e){let r=new FileReader();r.onload=()=>{try{d=JSON.parse(r.result);localStorage.setItem(K,JSON.stringify(d));render()}catch{alert('Copia no válida')}};r.readAsText(e.target.files[0])}
+render();
+</script></body></html>
